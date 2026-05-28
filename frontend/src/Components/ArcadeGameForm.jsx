@@ -61,7 +61,7 @@ function ArcadeGameForm({
             );
 
             if (!res.ok) {
-                console.log("Failed to join game");
+                console.log(res,"Failed to join game");
                 return;
             }
 

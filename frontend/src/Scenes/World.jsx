@@ -9,7 +9,7 @@ class WorldScene extends Phaser.Scene {
     create() {
         this.player = this.add.rectangle(400, 300, 50, 40, 0x00ff00);
         this.arcadeMachine = this.add.rectangle(300, 400, 40, 30, 0xff0000)
-        console.log("Scene Created");
+
         this.keys = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
             down: Phaser.Input.Keyboard.KeyCodes.S,
@@ -19,6 +19,14 @@ class WorldScene extends Phaser.Scene {
         this.arcadeInterateKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.ENTER
         );
+        window.addEventListener(
+            "start-tictactoe",
+            (event)=>{
+                const { gameId , playerId} = event.detail;
+                this.scene.pause();
+                this.scene.launch("TickTacToeScene",{gameId , playerId});
+            }
+        )
     }
     update() {
         const speed = 3;
