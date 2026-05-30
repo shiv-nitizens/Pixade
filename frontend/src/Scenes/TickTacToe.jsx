@@ -113,6 +113,9 @@ class TickTacToeScene extends Phaser.Scene{
         this.interactKey = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.ENTER
         )
+        this.testKey = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.P
+        )
 
         const res = await fetch(`http://localhost:8080/games/${this.gameId}`);
 
@@ -151,8 +154,18 @@ class TickTacToeScene extends Phaser.Scene{
     }
     update(){
          const speed = 3;
-        if(!this.keys || !this.EscapeKey || !this.interactKey){
+        if(!this.keys || !this.EscapeKey || !this.interactKey || !this.testKey){
             return;
+        }
+        if(Phaser.Input.Keyboard.JustDown(this.testKey)){
+            this.client.publish({
+                destination:"app/player-move",
+                body:JSON.stringify({
+                  playerId:this.playerId,
+                  x:this.player.x,
+                  y:this.player.y  
+                })
+            })
         }
         if (this.keys.up.isDown) {
             this.player.y -= speed;
