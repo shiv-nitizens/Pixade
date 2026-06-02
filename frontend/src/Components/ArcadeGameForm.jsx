@@ -64,7 +64,6 @@ function ArcadeGameForm({
                 console.log(res,"Failed to join game");
                 return;
             }
-
             const data = await res.json();
 
             console.log("Joined Game:", data);

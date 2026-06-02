@@ -12,12 +12,10 @@ public class PlayerPositionController {
 
     public PlayerPositionController(SimpMessagingTemplate simpMessagingTemplate){
         this.simpMessagingTemplate = simpMessagingTemplate;
-        System.out.println("HI");
     }
 
     @MessageMapping("/player-move")
     public void handleMove(PlayerPosition playerPosition){
-        System.out.println("Mess revieved");
         simpMessagingTemplate.convertAndSend("/topic/players",playerPosition);
     }
 }

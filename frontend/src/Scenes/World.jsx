@@ -12,6 +12,8 @@ class WorldScene extends Phaser.Scene {
         this.arcadeMachine = this.add.rectangle(300, 400, 40, 30, 0xff0000);
         this.playerId = localStorage.getItem("playerId");
         this.otherPlayer = {};
+        this.lastSeenX = this.player.x;
+        this.lastSeenY = this.player.y;
 
         this.client = new Client({
             brokerURL:"ws://localhost:8080/ws"        
@@ -23,14 +25,32 @@ class WorldScene extends Phaser.Scene {
                     return
                 }
                 if(!this.otherPlayer[player.playerId]){
-                    this.otherPlayer[player.playerId]= this.add.rectangle(player.x,player.y,50,40,0x0000ff)
+                    this.otherPlayer[player.playerId]= {
+                        rectangle :this.add.rectangle(player.x,player.y,50,40,0x0000ff),
+                        text :this.add.text(player.x,player.y,player.playerId,0xff0000)
+                    }
                 }else{
                     const remotePlayer = this.otherPlayer[player.playerId];
 
-                    remotePlayer.x =player.x;
-                    remotePlayer.y =player.y;
+                    remotePlayer.rectangle.x =player.x;
+                    remotePlayer.rectangle.y =player.y;
+
+                    remotePlayer.text.x = player.x-30;
+                    remotePlayer.text.y = player.y+40;
                 }
-                })
+            });
+            this.client.subscribe("/topic/arcade",(mess)=>{
+                console.log("subbed to arcade....");
+                const game = JSON.parse(mess.body);
+                console.log("arcade message: ",game);
+                if(this.playerId == game.player1Id || this.playerId == game.player2Id){
+                    this.scene.pause();
+                    this.scene.launch("TickTacToeScene",{
+                        gameId: game.gameId,
+                        playerId: this.playerId
+                    });
+                }
+            })
         }
         this.client.onWebSocketError = (err) => {
             console.log("WS ERROR", err);
@@ -44,9 +64,6 @@ class WorldScene extends Phaser.Scene {
             console.log("disconnected");
         };
         this.client.activate();
-        this.testKey = this.input.keyboard.addKey(
-            Phaser.Input.Keyboard.KeyCodes.P
-        )
 
         this.keys = this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -68,17 +85,6 @@ class WorldScene extends Phaser.Scene {
     }
     update() {
         const speed = 3;
-        if(Phaser.Input.Keyboard.JustDown(this.testKey)){
-            const payload = {
-                playerId: this.playerId,
-                x: this.player.x,
-                y: this.player.y
-            };
-            this.client.publish({
-                destination: "/app/player-move",
-                body: JSON.stringify(payload)
-            });
-        }
         if (this.keys.up.isDown) {
             this.player.y -= speed;
         }
@@ -91,13 +97,28 @@ class WorldScene extends Phaser.Scene {
         if (this.keys.left.isDown) {
             this.player.x -= speed;
         }
+        if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
+            this.client.publish({
+                destination:"/app/player-move",
+                body:JSON.stringify({
+                  playerId:this.playerId,
+                  x:this.player.x,
+                  y:this.player.y  
+                })
+            })
+            this.lastSentX = this.player.x;
+            this.lastSentY = this.player.y;
+        }
         if (Phaser.Input.Keyboard.JustDown(this.arcadeInterateKey)) {
             const x = this.player.x;
             const y = this.player.y;
             if (Math.abs(300 - x) < 30 && Math.abs(400 - y) < 30) {
-                window.dispatchEvent(
-                    new Event("open-menu")
-                );
+                this.client.publish({
+                    destination:"/app/arcade-join",
+                    body: JSON.stringify({
+                        playerId: this.playerId
+                    })
+                });
             }
         }
     }

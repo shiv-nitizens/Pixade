@@ -75,29 +75,50 @@ class TickTacToeScene extends Phaser.Scene{
         this.client = new Client({
             brokerURL:"ws://localhost:8080/ws"        
         })
+        this.otherPlayer = {};
+        this.lastSentX = this.player.x;
+        this.lastSentY = this.player.y;
+
         this.client.onConnect=()=>{
             console.log("connected to ws");
             this.client.subscribe(
                 `/topic/games/${this.gameId}`,
                 (mess)=>{
-                    const game = JSON.parse(mess.body)
+                    const game = JSON.parse(mess.body);
                     this.gameState = game;
                     this.renderBoard();
-                    console.log(
-                        "board updated"
-                        ,game
-                    )
-                }
-            )
+             });
+            this.client.subscribe(
+                `/topic/games/${this.gameId}/players`,
+                (mess)=>{
+                    const player = JSON.parse(mess.body);
+                    if(player.playerId === this.playerId){
+                        return
+                    }
+                    if(!this.otherPlayer[player.playerId]){
+                        this.otherPlayer[player.playerId]= {
+                            rectangle :this.add.rectangle(player.x,player.y,50,40,0x0000ff),
+                            text :this.add.text(player.x,player.y,player.playerId,0xff0000)
+                        }
+                    }else{
+                        const remotePlayer = this.otherPlayer[player.playerId];
+                        
+                        remotePlayer.rectangle.x =player.x;
+                        remotePlayer.rectangle.y =player.y;
+                        
+                        remotePlayer.text.x = player.x-30;
+                        remotePlayer.text.y = player.y+40;
+                    }
+                })
         }
         this.client.onWebSocketError = (err) => {
             console.log("WS ERROR", err);
         };
-
+        
         this.client.onStompError = (frame) => {
             console.log("STOMP ERROR", frame);
         };
-
+        
         this.client.onDisconnect = () => {
             console.log("disconnected");
         };
@@ -156,6 +177,18 @@ class TickTacToeScene extends Phaser.Scene{
          const speed = 3;
         if(!this.keys || !this.EscapeKey || !this.interactKey || !this.testKey){
             return;
+        }
+        if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
+            this.client.publish({
+                destination:`/app/games/${this.gameId}/player-move`,
+                body:JSON.stringify({
+                  playerId:this.playerId,
+                  x:this.player.x,
+                  y:this.player.y  
+                })
+            })
+            this.lastSentX = this.player.x;
+            this.lastSentY = this.player.y;
         }
         if(Phaser.Input.Keyboard.JustDown(this.testKey)){
             this.client.publish({
