@@ -10,7 +10,6 @@ class WorldScene extends Phaser.Scene {
     create() {
         this.player = this.add.rectangle(400, 300, 50, 40, 0x00ff00);
         this.arcadeMachine = this.add.rectangle(300, 400, 40, 30, 0xff0000);
-        this.playerId = localStorage.getItem("playerId");
         this.otherPlayer = {};
         this.lastSeenX = this.player.x;
         this.lastSeenY = this.player.y;
@@ -19,6 +18,14 @@ class WorldScene extends Phaser.Scene {
             brokerURL:"ws://localhost:8080/ws"        
         })
         this.client.onConnect=()=>{
+            this.client.publish({
+            destination:"/app/player-move",
+            body:JSON.stringify({
+                playerId:this.playerId,
+                x:this.player.x,
+                y:this.player.y
+            })
+        });
             this.client.subscribe("/topic/players",(mess)=>{
                 const player = JSON.parse(mess.body);
                 if(player.playerId === this.playerId){
@@ -124,15 +131,18 @@ class WorldScene extends Phaser.Scene {
     }
 }
 
-function World() {
+function World({worldId,playerId}) {
     useEffect(() => {
+        const worldScene = new WorldScene();
+        worldScene.playerId = playerId;
+        worldScene.worldId = worldId; 
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
             parent: "game-container",
             scene: [
-                WorldScene,
+                worldScene,
                 TickTacToeScene
             ]
         }

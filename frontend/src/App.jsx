@@ -1,30 +1,15 @@
 import { useState, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import World from './Scenes/World'
-import ArcadeGameForm from './Components/ArcadeGameForm'
+import  WorldForm from './Components/WorldForm'
 import HomeScreen from "./Components/HomeScreen";
 
 function App() {
     const [showMenu, setShowMenu] = useState(false);
     const [playerId,setPlayerId] = useState(null);
     const [screen,setScreen] = useState("HomeScreen");
+    const [worldData ,setWorldData] = useState(null);
 
-    const onGameStart = (game) => {
-
-    setShowMenu(false);
-
-    window.dispatchEvent(
-        new CustomEvent(
-            "start-tictactoe",
-            {
-                detail: {
-                    gameId: game.gameId,
-                    playerId: playerId
-                }
-            }
-        )
-    );
-};
     useEffect(() => {
         let id = localStorage.getItem("playerId");
         if(!id){
@@ -56,14 +41,17 @@ function App() {
             />
             }
         if(screen == "world"){
-            return <World/>
+            return <World
+                worldId={worldData.worldId}
+                playerId={playerId}
+                />
         }
         if(screen == "private-match"){
-            return <ArcadeGameForm
-                        gameType="TicTacToe"
+            return <WorldForm
+                        setWorldData={setWorldData}
                         playerId={playerId}
                         onClose={() => setShowMenu(false)}
-                        onGameStart={onGameStart}
+                        setScreen={setScreen}
                     />
         }
         return

@@ -81,6 +81,14 @@ class TickTacToeScene extends Phaser.Scene{
 
         this.client.onConnect=()=>{
             console.log("connected to ws");
+            this.client.publish({
+            destination:`/app/games/${this.gameId}/player-move`,
+            body:JSON.stringify({
+                playerId:this.playerId,
+                x:this.player.x,
+                y:this.player.y
+            })
+        });
             this.client.subscribe(
                 `/topic/games/${this.gameId}`,
                 (mess)=>{
@@ -97,8 +105,8 @@ class TickTacToeScene extends Phaser.Scene{
                     }
                     if(!this.otherPlayer[player.playerId]){
                         this.otherPlayer[player.playerId]= {
-                            rectangle :this.add.rectangle(player.x,player.y,50,40,0x0000ff),
-                            text :this.add.text(player.x,player.y,player.playerId,0xff0000)
+                            rectangle :this.add.rectangle(player.x,player.y,50,40,0x0000ff).setDepth(10),
+                            text :this.add.text(player.x,player.y,player.playerId,0xff0000).setDepth(11)
                         }
                     }else{
                         const remotePlayer = this.otherPlayer[player.playerId];
@@ -157,10 +165,6 @@ class TickTacToeScene extends Phaser.Scene{
                 console.log("Move failed");
                 return;
             }
-            this.scene.restart({
-                gameId: this.gameId,
-                playerId: this.playerId
-            });
         };
 
         const game = await res.json();
