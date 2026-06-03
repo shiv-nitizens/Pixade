@@ -91,7 +91,7 @@ function ArcadeGameForm({
                     bg-zinc-900
                     p-8
                     rounded-xl
-                    w-[400px]
+                    w-100
                     flex
                     flex-col
                     gap-6

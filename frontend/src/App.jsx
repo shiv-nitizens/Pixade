@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { v4 as uuid } from "uuid";
 import World from './Scenes/World'
 import ArcadeGameForm from './Components/ArcadeGameForm'
+import HomeScreen from "./Components/HomeScreen";
 
 function App() {
     const [showMenu, setShowMenu] = useState(false);
     const [playerId,setPlayerId] = useState(null);
+    const [screen,setScreen] = useState("HomeScreen");
 
     const onGameStart = (game) => {
 
@@ -48,20 +50,23 @@ function App() {
         };
 
     }, []);
-    return (
-        <>
-            <World />
-            {
-                showMenu && (
-                    <ArcadeGameForm
+        if(screen == "HomeScreen"){
+                return <HomeScreen
+                setScreen={setScreen}
+            />
+            }
+        if(screen == "world"){
+            return <World/>
+        }
+        if(screen == "private-match"){
+            return <ArcadeGameForm
                         gameType="TicTacToe"
                         playerId={playerId}
                         onClose={() => setShowMenu(false)}
                         onGameStart={onGameStart}
                     />
-                )
-            }    </>
-    )
+        }
+        return
 }
 
 export default App
