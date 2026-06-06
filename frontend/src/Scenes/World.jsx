@@ -152,15 +152,20 @@ function World({worldId,playerId}) {
         }
     }, []);
 
-    return (
-        <div
-            id="game-container"
-            style={{
-                position: "fixed",
-                inset: 0,
-                zIndex: 1
-            }}
-        ></div>
+    return (<>
+        <div style={{position: "fixed",top: "10px",left: "10px",zIndex: 1000,background: "#222",color: "white",padding: "10px",borderRadius: "8px"}}>
+                World ID: {worldId}
+                <br />
+                <button style={{cursor:"pointer"}}
+                    onClick={() =>
+                        navigator.clipboard.writeText(worldId)
+                    }
+                >
+                    Copy
+                </button>
+            </div>
+        <div id="game-container"></div>
+        </>
     );
 }
 export default World;

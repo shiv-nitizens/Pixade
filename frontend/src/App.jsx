@@ -40,10 +40,11 @@ function App() {
                 setScreen={setScreen}
             />
             }
-        if(screen == "world"){
+        if(screen == "world" && worldData){
             return <World
-                worldId={worldData.worldId}
+                worldId={worldData.WorldId}
                 playerId={playerId}
+                
                 />
         }
         if(screen == "private-match"){
