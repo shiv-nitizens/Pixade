@@ -9,7 +9,7 @@ function App() {
     const [playerId,setPlayerId] = useState(null);
     const [screen,setScreen] = useState("HomeScreen");
     const [worldData ,setWorldData] = useState(null);
-
+    console.log(playerId);
     useEffect(() => {
         let id = localStorage.getItem("playerId");
         if(!id){
@@ -38,6 +38,7 @@ function App() {
         if(screen == "HomeScreen"){
                 return <HomeScreen
                 setScreen={setScreen}
+                setWorldData={setWorldData}
             />
             }
         if(screen == "world" && worldData){

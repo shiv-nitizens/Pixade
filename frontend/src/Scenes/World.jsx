@@ -19,14 +19,14 @@ class WorldScene extends Phaser.Scene {
         })
         this.client.onConnect=()=>{
             this.client.publish({
-            destination:"/app/player-move",
+            destination:`/app/worlds/${this.worldId}/player-move`,
             body:JSON.stringify({
                 playerId:this.playerId,
                 x:this.player.x,
                 y:this.player.y
             })
         });
-            this.client.subscribe("/topic/players",(mess)=>{
+            this.client.subscribe(`/topic/worlds/${this.worldId}/players`,(mess)=>{
                 const player = JSON.parse(mess.body);
                 if(player.playerId === this.playerId){
                     return
@@ -106,7 +106,7 @@ class WorldScene extends Phaser.Scene {
         }
         if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
             this.client.publish({
-                destination:"/app/player-move",
+                destination:`/app/worlds/${this.worldId}/player-move`,
                 body:JSON.stringify({
                   playerId:this.playerId,
                   x:this.player.x,
