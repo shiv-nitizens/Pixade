@@ -45,7 +45,7 @@ function App() {
             return <World
                 worldId={worldData.WorldId}
                 playerId={playerId}
-                
+                players={worldData.players}
                 />
         }
         if(screen == "private-match"){

@@ -2,6 +2,7 @@ package com.example.tictactoebackend.Controller;
 
 import com.example.tictactoebackend.DataTransferObject.CreateWorldRequest;
 import com.example.tictactoebackend.DataTransferObject.JoinWorldRequest;
+import com.example.tictactoebackend.Model.PlayerPosition;
 import com.example.tictactoebackend.Model.World;
 import com.example.tictactoebackend.Service.WorldService;
 import org.springframework.http.HttpStatus;

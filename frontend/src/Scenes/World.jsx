@@ -11,6 +11,30 @@ class WorldScene extends Phaser.Scene {
         this.player = this.add.rectangle(400, 300, 50, 40, 0x00ff00);
         this.arcadeMachine = this.add.rectangle(300, 400, 40, 30, 0xff0000);
         this.otherPlayer = {};
+        console.log(this.players);
+        if (this.players) {
+            Object.values(this.players).forEach((player) => {
+
+                if (player.playerId === this.playerId) {
+                    return;
+                }
+
+                this.otherPlayer[player.playerId] = {
+                    rectangle: this.add.rectangle(
+                        player.x,
+                        player.y,
+                        50,
+                        40,
+                        0x0000ff
+                    ),
+                    text: this.add.text(
+                        player.x,
+                        player.y,
+                        player.playerId
+                    )
+                };
+            });
+        }
         this.lastSeenX = this.player.x;
         this.lastSeenY = this.player.y;
 
@@ -18,14 +42,6 @@ class WorldScene extends Phaser.Scene {
             brokerURL:"ws://localhost:8080/ws"        
         })
         this.client.onConnect=()=>{
-            this.client.publish({
-            destination:`/app/worlds/${this.worldId}/player-move`,
-            body:JSON.stringify({
-                playerId:this.playerId,
-                x:this.player.x,
-                y:this.player.y
-            })
-        });
             this.client.subscribe(`/topic/worlds/${this.worldId}/players`,(mess)=>{
                 const player = JSON.parse(mess.body);
                 if(player.playerId === this.playerId){
@@ -57,7 +73,15 @@ class WorldScene extends Phaser.Scene {
                         playerId: this.playerId
                     });
                 }
-            })
+            });
+            this.client.publish({
+            destination:`/app/worlds/${this.worldId}/player-move`,
+            body:JSON.stringify({
+                playerId:this.playerId,
+                x:this.player.x,
+                y:this.player.y
+                })
+            });        
         }
         this.client.onWebSocketError = (err) => {
             console.log("WS ERROR", err);
@@ -131,11 +155,12 @@ class WorldScene extends Phaser.Scene {
     }
 }
 
-function World({worldId,playerId}) {
+function World({worldId,playerId,players}) {
     useEffect(() => {
         const worldScene = new WorldScene();
         worldScene.playerId = playerId;
         worldScene.worldId = worldId; 
+        worldScene.players = players;
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
