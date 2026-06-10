@@ -2,14 +2,31 @@ import Phaser from "phaser";
 import { useEffect } from "react";
 import TickTacToeScene from "./TickTacToe";
 import { Client } from "@stomp/stompjs";
+import ArcadeMachine from "../assets/image.png";
+import floor from "../assets/Floor.png";
+import ghost from "../assets/vecteezy_pixel-art-of-a-levitating-white-ghost-with-a-side-view-for_69528640.png"
 
 class WorldScene extends Phaser.Scene {
     constructor() {
         super("WorldScene");
     }
+    preload(){
+        this.load.image("ArcadeMachine",ArcadeMachine)
+        this.load.image("floor",floor)
+        this.load.image("ghost",ghost)
+    }
     create() {
-        this.player = this.add.rectangle(400, 300, 50, 40, 0x00ff00);
-        this.arcadeMachine = this.add.rectangle(300, 400, 40, 30, 0xff0000);
+        const tileSize = 650;
+
+        for(let x = 0; x < this.scale.width; x += tileSize){
+            for(let y = 0; y < this.scale.height; y += tileSize){
+                this.add.image(x, y, "floor")
+                    .setOrigin(0,0)
+                    .setDisplaySize(tileSize, tileSize);
+            }
+        }
+        this.player = this.add.image(300,400,"ghost").setScale(0.025);
+        this.arcadeMachine = this.add.image(400,600,"ArcadeMachine").setScale(0.125);
         this.otherPlayer = {};
         console.log(this.players);
         if (this.players) {
@@ -35,8 +52,8 @@ class WorldScene extends Phaser.Scene {
                 };
             });
         }
-        this.lastSeenX = this.player.x;
-        this.lastSeenY = this.player.y;
+        this.lastSentX = this.player.x;
+        this.lastSentY = this.player.y;
 
         this.client = new Client({
             brokerURL:"ws://localhost:8080/ws"        
@@ -115,6 +132,8 @@ class WorldScene extends Phaser.Scene {
         )
     }
     update() {
+        const oldX = this.player.x;
+        const oldY = this.player.y;
         const speed = 3;
         if (this.keys.up.isDown) {
             this.player.y -= speed;
@@ -128,6 +147,20 @@ class WorldScene extends Phaser.Scene {
         if (this.keys.left.isDown) {
             this.player.x -= speed;
         }
+
+    const machineBounds = this.arcadeMachine.getBounds();
+
+    const hitMachine =
+        this.player.x + 6 > machineBounds.left &&
+        this.player.x - 6 < machineBounds.right &&
+        this.player.y + 3 > machineBounds.top &&
+        this.player.y - 3 < machineBounds.bottom;
+
+    if (hitMachine) {
+        this.player.x = oldX;
+        this.player.y = oldY;
+    }
+                
         if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
             this.client.publish({
                 destination:`/app/worlds/${this.worldId}/player-move`,
@@ -141,9 +174,29 @@ class WorldScene extends Phaser.Scene {
             this.lastSentY = this.player.y;
         }
         if (Phaser.Input.Keyboard.JustDown(this.arcadeInterateKey)) {
-            const x = this.player.x;
-            const y = this.player.y;
-            if (Math.abs(300 - x) < 30 && Math.abs(400 - y) < 30) {
+
+            const machineBounds = this.arcadeMachine.getBounds();
+
+            const leftZone = new Phaser.Geom.Rectangle(
+                machineBounds.left - 50,
+                machineBounds.top,
+                50,
+                machineBounds.height
+            );
+
+            const rightZone = new Phaser.Geom.Rectangle(
+                machineBounds.right,
+                machineBounds.top,
+                50,
+                machineBounds.height
+            );
+
+            const canInteract =
+                leftZone.contains(this.player.x, this.player.y) ||
+                rightZone.contains(this.player.x, this.player.y);
+            console.log("Can Interact",canInteract);
+
+            if (canInteract) {
                 this.client.publish({
                     destination:"/app/arcade-join",
                     body: JSON.stringify({

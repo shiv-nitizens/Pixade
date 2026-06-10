@@ -14,8 +14,6 @@ function HomeScreen({ setScreen,setWorldData}){
 
         const data = await res.json();
 
-        console.log("Common World:", data);
-
         setWorldData(data);
         setScreen("world");
 
