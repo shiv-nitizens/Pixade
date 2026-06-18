@@ -26,29 +26,31 @@ class WorldScene extends Phaser.Scene {
             }
         }
         this.player = this.add.image(300,400,"ghost").setScale(0.025);
-        this.arcadeMachine = this.add.image(400,600,"ArcadeMachine").setScale(0.125);
+        this.playerName = this.add.text( this.player.x, this.player.y-30, this.playerId );
+        this.arcadeMachines =
+        [
+            {x: 300, y: 600, game: "TICTACTOE" },
+            {x: 600, y: 600, game: "??????????" },
+            {x: 900, y: 600, game: "??????????" }
+        ];
+        this.interactionText = this.add.text(0, 0, "",
+            {fontSize: "16px", color: "#ffffff", backgroundColor: "#000000" }
+        );
+        this.interactionText.setVisible(false);
+        this.arcadeMachines.forEach(machine => {
+            machine.sprite = this.add.image(machine.x, machine.y, "ArcadeMachine").setScale(0.125);
+            machine.label = this.add.text(machine.x, machine.y - 80, machine.game ).setOrigin(0.5);
+        });
         this.otherPlayer = {};
         console.log(this.players);
         if (this.players) {
             Object.values(this.players).forEach((player) => {
-
                 if (player.playerId === this.playerId) {
                     return;
                 }
-
                 this.otherPlayer[player.playerId] = {
-                    rectangle: this.add.rectangle(
-                        player.x,
-                        player.y,
-                        50,
-                        40,
-                        0x0000ff
-                    ),
-                    text: this.add.text(
-                        player.x,
-                        player.y,
-                        player.playerId
-                    )
+                    rectangle: this.add.image(player.x,player.y,"ghost").setScale(0.025),
+                    text: this.add.text(player.x, player.y, player.playerId)
                 };
             });
         }
@@ -66,8 +68,8 @@ class WorldScene extends Phaser.Scene {
                 }
                 if(!this.otherPlayer[player.playerId]){
                     this.otherPlayer[player.playerId]= {
-                        rectangle :this.add.rectangle(player.x,player.y,50,40,0x0000ff),
-                        text :this.add.text(player.x,player.y,player.playerId,0xff0000)
+                        rectangle: this.add.image(player.x,player.y,"ghost").setScale(0.025),
+                        text :this.add.text(player.x,player.y,player.playerId)
                     }
                 }else{
                     const remotePlayer = this.otherPlayer[player.playerId];
@@ -75,8 +77,8 @@ class WorldScene extends Phaser.Scene {
                     remotePlayer.rectangle.x =player.x;
                     remotePlayer.rectangle.y =player.y;
 
-                    remotePlayer.text.x = player.x-30;
-                    remotePlayer.text.y = player.y+40;
+                    remotePlayer.text.x = player.x-50;
+                    remotePlayer.text.y = player.y-50;
                 }
             });
             this.client.subscribe("/topic/arcade",(mess)=>{
@@ -147,19 +149,30 @@ class WorldScene extends Phaser.Scene {
         if (this.keys.left.isDown) {
             this.player.x -= speed;
         }
+        this.playerName.x = this.player.x-50;
+        this.playerName.y = this.player.y-50;
 
-    const machineBounds = this.arcadeMachine.getBounds();
+    let hitMachine = false;
 
-    const hitMachine =
-        this.player.x + 6 > machineBounds.left &&
-        this.player.x - 6 < machineBounds.right &&
-        this.player.y + 3 > machineBounds.top &&
-        this.player.y - 3 < machineBounds.bottom;
+    for (const machine of this.arcadeMachines) {
+
+        const machineBounds = machine.sprite.getBounds();
+
+        if (
+            this.player.x + 6 > machineBounds.left &&
+            this.player.x - 6 < machineBounds.right &&
+            this.player.y + 3 > machineBounds.top &&
+            this.player.y - 3 < machineBounds.bottom
+        ) {
+            hitMachine = true;
+            break;
+        }
+    }
 
     if (hitMachine) {
-        this.player.x = oldX;
-        this.player.y = oldY;
-    }
+    this.player.x = oldX;
+    this.player.y = oldY;
+}
                 
         if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
             this.client.publish({
@@ -173,36 +186,52 @@ class WorldScene extends Phaser.Scene {
             this.lastSentX = this.player.x;
             this.lastSentY = this.player.y;
         }
-        if (Phaser.Input.Keyboard.JustDown(this.arcadeInterateKey)) {
-
-            const machineBounds = this.arcadeMachine.getBounds();
-
-            const leftZone = new Phaser.Geom.Rectangle(
-                machineBounds.left - 50,
-                machineBounds.top,
-                50,
-                machineBounds.height
-            );
-
-            const rightZone = new Phaser.Geom.Rectangle(
-                machineBounds.right,
-                machineBounds.top,
-                50,
-                machineBounds.height
-            );
-
+        let nearbyMachine = null;
+        for (const machine of this.arcadeMachines) {
+            const machineBounds = machine.sprite.getBounds();
+            const leftZone = new Phaser.Geom.Rectangle(machineBounds.left - 50, machineBounds.top, 50, machineBounds.height );
+            const rightZone = new Phaser.Geom.Rectangle(machineBounds.right, machineBounds.top, 50, machineBounds.height );
             const canInteract =
                 leftZone.contains(this.player.x, this.player.y) ||
                 rightZone.contains(this.player.x, this.player.y);
-            console.log("Can Interact",canInteract);
-
             if (canInteract) {
+                nearbyMachine = machine;
+                break;
+            }
+        }
+        if (nearbyMachine) {
+            this.interactionText.setText(`[ENTER] ${nearbyMachine.game}`);
+            this.interactionText.setPosition(this.player.x - 50,this.player.y - 80);
+            this.interactionText.setVisible(true);
+        }else{
+            this.interactionText.setVisible(false);
+        }
+        if (Phaser.Input.Keyboard.JustDown(this.arcadeInterateKey)) {
+            let selectedMachine = null;
+            for (const machine of this.arcadeMachines) {
+                const machineBounds = machine.sprite.getBounds();
+                const leftZone = new Phaser.Geom.Rectangle(machineBounds.left - 50, machineBounds.top, 50, machineBounds.height);
+                const rightZone = new Phaser.Geom.Rectangle(machineBounds.right, machineBounds.top, 50, machineBounds.height);
+                const canInteract =
+                    leftZone.contains(this.player.x, this.player.y) ||
+                    rightZone.contains(this.player.x, this.player.y);
+                if (canInteract) {
+                    selectedMachine = machine;
+                    break;
+                }
+            }
+            if (selectedMachine.game === "TICTACTOE") {
                 this.client.publish({
-                    destination:"/app/arcade-join",
+                    destination: "/app/arcade-join",
                     body: JSON.stringify({
                         playerId: this.playerId
                     })
                 });
+            }else{
+                console.log("COMMING SOON....")
+            }
+            if (selectedMachine) {
+                console.log(selectedMachine.game);
             }
         }
     }
