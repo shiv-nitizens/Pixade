@@ -93,6 +93,19 @@ class WorldScene extends Phaser.Scene {
                     });
                 }
             });
+            this.client.subscribe(
+                `/topic/worlds/${this.worldId}/player-left`,
+                (message) => {
+                    const event = JSON.parse(message.body);
+                    const player =
+                        this.otherPlayer[event.playerId];
+                    if(player){
+                        player.rectangle.destroy();
+                        player.text.destroy();
+                        delete this.otherPlayer[event.playerId];
+                    }
+                }
+            );
             this.client.publish({
             destination:`/app/worlds/${this.worldId}/player-move`,
             body:JSON.stringify({
@@ -220,7 +233,7 @@ class WorldScene extends Phaser.Scene {
                     break;
                 }
             }
-            if (selectedMachine.game === "TICTACTOE") {
+            if (selectedMachine && selectedMachine.game === "TICTACTOE" ){
                 this.client.publish({
                     destination: "/app/arcade-join",
                     body: JSON.stringify({
@@ -254,6 +267,20 @@ function World({worldId,playerId,players}) {
             ]
         }
         const game = new Phaser.Game(config);
+        window.leaveWorld = async () => {
+            await fetch("http://localhost:8080/world/leave-world", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                worldId,
+                playerId
+            })
+        });
+    game.destroy(true);
+    window.location.reload();
+};
         return () => {
             game.destroy(true);
         }
@@ -269,6 +296,9 @@ function World({worldId,playerId,players}) {
                     }
                 >
                     Copy
+                </button>
+                <button onClick={() => window.leaveWorld()}>
+                    Leave World
                 </button>
             </div>
         <div id="game-container"></div>

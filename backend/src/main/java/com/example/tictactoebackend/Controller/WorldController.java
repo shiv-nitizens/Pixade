@@ -2,11 +2,13 @@ package com.example.tictactoebackend.Controller;
 
 import com.example.tictactoebackend.DataTransferObject.CreateWorldRequest;
 import com.example.tictactoebackend.DataTransferObject.JoinWorldRequest;
+import com.example.tictactoebackend.DataTransferObject.LeaveWorldRequest;
 import com.example.tictactoebackend.Model.PlayerPosition;
 import com.example.tictactoebackend.Model.World;
 import com.example.tictactoebackend.Service.WorldService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class WorldController {
 
     WorldService worldService;
+    SimpMessagingTemplate simpMessagingTemplate;
 
-    public WorldController(WorldService worldService){
+    public WorldController(WorldService worldService,SimpMessagingTemplate simpMessagingTemplate){
         this.worldService = worldService;
+        this.simpMessagingTemplate = simpMessagingTemplate;
     }
 
     @PostMapping("/create-world")
@@ -43,5 +47,15 @@ public class WorldController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         return ResponseEntity.ok(world);
+    }
+    @PostMapping("/leave-world")
+    public ResponseEntity<Void> leaveWorld(@RequestBody LeaveWorldRequest req){
+        System.out.println("Player Leaving:"+req.getPlayerId());
+        worldService.leaveWorld(req.getWorldId(), req.getPlayerId() );
+        simpMessagingTemplate.convertAndSend(
+                "/topic/worlds/" + req.getWorldId() + "/player-left",
+                new PlayerLeftEvent(req.getPlayerId())
+        );
+        return ResponseEntity.ok().build();
     }
 }

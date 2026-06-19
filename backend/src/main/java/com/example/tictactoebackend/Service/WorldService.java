@@ -52,4 +52,12 @@ public class WorldService {
         return Worlds.get(worldId);
     }
 
+    public void leaveWorld(String worldId, String playerId) {
+        World world = Worlds.get(worldId);
+        if(world == null){
+            return;
+        }
+        world.getPlayers().remove(playerId);
+    }
+
 }
