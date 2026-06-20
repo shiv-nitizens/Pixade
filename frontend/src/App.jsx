@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { v4 as uuid } from "uuid";
-import World from './Scenes/World'
+import ArcadeInterirorScene from './Scenes/ArcadeInteriorScene'
 import  WorldForm from './Components/WorldForm'
 import HomeScreen from "./Components/HomeScreen";
 
@@ -42,7 +42,7 @@ function App() {
             />
             }
         if(screen == "world" && worldData){
-            return <World
+            return <ArcadeInterirorScene
                 worldId={worldData.WorldId}
                 playerId={playerId}
                 players={worldData.players}

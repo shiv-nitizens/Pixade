@@ -1,14 +1,15 @@
 import Phaser from "phaser";
 import { useEffect } from "react";
 import TickTacToeScene from "./TickTacToe";
+import OutsideWorldScene from "./OutsideWorldScene";
 import { Client } from "@stomp/stompjs";
 import ArcadeMachine from "../assets/image.png";
 import floor from "../assets/Floor.png";
 import ghost from "../assets/vecteezy_pixel-art-of-a-levitating-white-ghost-with-a-side-view-for_69528640.png"
 
-class WorldScene extends Phaser.Scene {
+class ArcadeInteriorScene extends Phaser.Scene {
     constructor() {
-        super("WorldScene");
+        super("ArcadeInteriorScene");
     }
     preload(){
         this.load.image("ArcadeMachine",ArcadeMachine)
@@ -16,6 +17,8 @@ class WorldScene extends Phaser.Scene {
         this.load.image("ghost",ghost)
     }
     create() {
+        this.cameras.main.fadeIn(500,0,0,0);
+        console.log(this.playerId)
         const tileSize = 650;
 
         for(let x = 0; x < this.scale.width; x += tileSize){
@@ -252,17 +255,24 @@ class WorldScene extends Phaser.Scene {
 
 function World({worldId,playerId,players}) {
     useEffect(() => {
-        const worldScene = new WorldScene();
-        worldScene.playerId = playerId;
-        worldScene.worldId = worldId; 
-        worldScene.players = players;
+
+        const outsideWorldScene = new OutsideWorldScene();
+        outsideWorldScene.playerId = playerId;
+        outsideWorldScene.worldId = worldId;
+        outsideWorldScene.players = players;
+
+        const arcadeInteriorScene = new ArcadeInteriorScene();
+        arcadeInteriorScene.playerId = playerId;
+        arcadeInteriorScene.worldId = worldId; 
+        arcadeInteriorScene.players = players;
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
             parent: "game-container",
             scene: [
-                worldScene,
+                outsideWorldScene,
+                arcadeInteriorScene,
                 TickTacToeScene
             ]
         }
