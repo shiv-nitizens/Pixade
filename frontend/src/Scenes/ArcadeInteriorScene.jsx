@@ -28,7 +28,7 @@ class ArcadeInteriorScene extends Phaser.Scene {
                     .setDisplaySize(tileSize, tileSize);
             }
         }
-        this.player = this.add.image(300,400,"ghost").setScale(0.025);
+        this.player = this.add.image(300,400,"ghost").setScale(0.018);
         this.playerName = this.add.text( this.player.x, this.player.y-30, this.playerId );
         this.arcadeMachines =
         [

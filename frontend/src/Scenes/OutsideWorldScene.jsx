@@ -1,23 +1,67 @@
 import Phaser from "phaser";
+import ArcadeBuilding from "../assets/ArcadeBuilding.png"
+import ghost from "../assets/vecteezy_pixel-art-of-a-levitating-white-ghost-with-a-side-view-for_69528640.png"
+import Tree from "../assets/Tree.png"
+import Floor from "../assets/OutsideFloor.png"
+import FlowerPot from "../assets/FlowerPot.png"
+import Fountain from "../assets/Fountain.png";
+import Lamp from "../assets/Lamp.png";
+import Base from "../assets/Base.png";
+import Pavement from "../assets/Pavement.png";
 
 class OutsideWorldScene extends Phaser.Scene{
     constructor(){
         super("OutsideWorldScene")
     }
+    preload(){
+        this.load.image("ArcadeBuilding",ArcadeBuilding);
+        this.load.image("ghost",ghost);
+        this.load.image("Tree",Tree);
+        this.load.image("Floor",Floor);
+        this.load.image("FlowerPot",FlowerPot);
+        this.load.image("Fountain",Fountain);
+        this.load.image("Lamp",Lamp);
+        this.load.image("Base",Base);
+        this.load.image("Pavement",Pavement);
+    }
     create(){
         this.add.rectangle(0,0,3000,3000,0x3cb043).setOrigin(0);
-        this.ArcadeBuilding = this.add.rectangle(800,500,300,200,0x444444);
-        this.player = this.add.rectangle(300,700,40,40,0x00ff00);
+                const tileSize = 400;
+
+         for(let x = 0; x < 3000; x += tileSize){
+            for(let y = 0; y < 3000; y += tileSize){
+                this.add.image(x, y, "Floor")
+                    .setOrigin(0,0)
+                    .setDisplaySize(tileSize, tileSize);
+            }
+        }
+        this.Pavement = this.add.image(900,1100,"Pavement").setScale(1.2)
+        this.ArcadeBuilding = this.add.image(900,380,"ArcadeBuilding").setScale(0.5);
+        
+        this.leftPot = this.add.image(725,540,"FlowerPot").setScale(0.085);
+        this.righPot = this.add.image(1075,540,"FlowerPot").setScale(0.085);
+        const bounds =
+        this.ArcadeBuilding.getBounds();
+        this.buildingCollision = new Phaser.Geom.Rectangle(740,430,320,50);
+        this.leftPillarCollision =new Phaser.Geom.Rectangle(835,470,55,80);
+        this.rightPillarCollision =new Phaser.Geom.Rectangle(935,470,35,80);
+        this.entranceZone = new Phaser.Geom.Rectangle(850,500,85,40);
+
+        this.player = this.add.image(900,1150,"ghost").setScale(0.018);
+        this.cameras.main.startFollow(this.player);
+        this.cameras.main.setBounds(0,0,3000,3000);
         this.enterArcadeText = this.add.text( 0,0, "[ENTER] Enter Arcade",
             {
                 fontSize: "16px",
                 color: "#ffffff",
                 backgroundColor: "#000000"
             });
-
+        this.fountain = this.add.image(900,1050,"Fountain").setScale(0.3);
+        this.upperLeftLamp = this.add.image(700,800,"Lamp").setScale(0.15);
+        this.upperRightLamp = this.add.image(1098,800,"Lamp").setScale(0.15);
+        this.leftLamp = this.add.image(720,1300,"Lamp").setScale(0.15);
+        this.rightLamp = this.add.image(1070,1300,"Lamp").setScale(0.15);
         this.enterArcadeText.setVisible(false);
-
-        this.entranceZone = new Phaser.Geom.Rectangle( 760, 600, 80, 40 );
 
         this.keys = this.input.keyboard.addKeys({
                     up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -28,6 +72,9 @@ class OutsideWorldScene extends Phaser.Scene{
         this.enterKey = this.input.keyboard.addKey( Phaser.Input.Keyboard.KeyCodes.ENTER );
     }
     update(){
+
+        const oldX = this.player.x;
+        const oldY = this.player.y;
 
         const speed = 3;
         if (this.keys.up.isDown) {
@@ -43,27 +90,54 @@ class OutsideWorldScene extends Phaser.Scene{
             this.player.x -= speed;
         }
 
-        const nearEntrance = this.entranceZone.contains(
-            this.player.x,
-            this.player.y
-        );
+        if(this.player.x < 0){
+            this.player.x = 0;
+        }
+        if(this.player.x > 3000){
+            this.player.x = 3000;
+        }
+
+        if(this.player.y < 0){
+            this.player.y = 0;
+        }
+        if(this.player.y > 3000){
+            this.player.y = 3000;
+        }
+        
+      const hitBuilding = this.buildingCollision.contains(this.player.x,this.player.y) || this.leftPillarCollision.contains(this.player.x,this.player.y )|| this.rightPillarCollision.contains(this.player.x, this.player.y);
+        const nearEntrance =
+            this.entranceZone.contains(
+                this.player.x,
+                this.player.y
+            );
+
+        if (hitBuilding && !nearEntrance) {
+            this.player.x = oldX;
+            this.player.y = oldY;
+        }
+
         if (nearEntrance) {
             this.enterArcadeText.setPosition( this.player.x - 60, this.player.y - 60 ); 
             this.enterArcadeText.setVisible(true);
         }else{
             this.enterArcadeText.setVisible(false);
         }
-        if ( nearEntrance && Phaser.Input.Keyboard.JustDown(this.enterKey)){
-            this.cameras.main.fadeOut(500,0,0,0);
-        }
-        this.cameras.main.once(
-            "camerafadeoutcomplete",
-            () => {
-                this.scene.start(
-                "ArcadeInteriorScene"
+        if (nearEntrance && Phaser.Input.Keyboard.JustDown( this.enterKey)) {
+            this.cameras.main.once(
+                "camerafadeoutcomplete",
+                () => {
+                    this.scene.start(
+                        "ArcadeInteriorScene"
+                    );
+                }
             );
-            }
-        );
+            this.cameras.main.fadeOut(
+                500,
+                0,
+                0,
+                0
+            );
+        }
     }
 }
 export default OutsideWorldScene;
