@@ -300,11 +300,7 @@ function World({worldId,playerId,players}) {
         <div style={{position: "fixed",top: "10px",left: "10px",zIndex: 1000,background: "#222",color: "white",padding: "10px",borderRadius: "8px"}}>
                 World ID: {worldId}
                 <br />
-                <button style={{cursor:"pointer"}}
-                    onClick={() =>
-                        navigator.clipboard.writeText(worldId)
-                    }
-                >
+                <button style={{cursor:"pointer"}} onClick={() => navigator.clipboard.writeText(worldId)}>
                     Copy
                 </button>
                 <button onClick={() => window.leaveWorld()}>
