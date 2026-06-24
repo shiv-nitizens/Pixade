@@ -58,18 +58,12 @@ class OutsideWorldScene extends Phaser.Scene{
     }
     create(){
         this.add.rectangle(0,0,3000,3000,0x3cb043).setOrigin(0);
-        const tileSize = 400;
 
         this.base = this.add.image(0,0,"Base").setOrigin(0).setScale(1.8);
         this.Pavement = this.add.image(1373,1000,"Pavement").setScale(0.7)
         this.ArcadeBuilding = this.add.image(1375,420,"ArcadeBuilding").setScale(0.5);
         this.leftPot = this.add.image(1160,600,"FlowerPot").setScale(0.1);
         this.righPot = this.add.image(1590,600,"FlowerPot").setScale(0.1);
-
-        this.topRightLamp = this.add.image(1870,210,"Lamp").setScale(0.18);
-        this.topLeftLamp = this.add.image(925,210,"Lamp").setScale(0.18);
-        this.bottomLeftLamp = this.add.image(170,1120,"Lamp").setScale(0.18);
-        this.bottonRightLamp = this.add.image(2550,1120,"Lamp").setScale(0.18);
 
         this.bottomLeftSign = this.add.image(420 , 1250,"BottomLeftSign").setScale(0.125);
         this.boulder = this.add.image(395,255,"Boulder").setScale(0.1);
@@ -105,8 +99,6 @@ class OutsideWorldScene extends Phaser.Scene{
         this.rightFlag = this.add.image(1500,800,"Flag").setScale(0.105,0.08);
         this.leftFlag = this.add.image(1240,800,"Flag").setScale(0.105,0.08);
         this.fountain = this.add.image(1375,955,"Fountain").setScale(0.25);
-        this.leftLamp = this.add.image(1150,1300,"Lamp").setScale(0.18);
-        this.rightLamp = this.add.image(1580,1300,"Lamp").setScale(0.18);
         this.rightBench = this.add.image(1848,1120,"Bench").setScale(0.15);
         this.leftBench = this.add.image(938,1120,"Bench").setScale(0.17);
 
@@ -119,6 +111,18 @@ class OutsideWorldScene extends Phaser.Scene{
                     left: Phaser.Input.Keyboard.KeyCodes.A
                     });
         this.enterKey = this.input.keyboard.addKey( Phaser.Input.Keyboard.KeyCodes.ENTER );
+        const darkness = this.add.rectangle(0,0,2790,1790,0x000000);
+
+        this.leftLamp = this.add.image(1150,1300,"Lamp").setScale(0.18);
+        this.rightLamp = this.add.image(1580,1300,"Lamp").setScale(0.18);
+
+        this.topRightLamp = this.add.image(1870,210,"Lamp").setScale(0.18);
+        this.topLeftLamp = this.add.image(925,210,"Lamp").setScale(0.18);
+        this.bottomLeftLamp = this.add.image(170,1120,"Lamp").setScale(0.18);
+        this.bottonRightLamp = this.add.image(2550,1120,"Lamp").setScale(0.18);
+
+        darkness.setOrigin(0, 0);
+        darkness.setAlpha(0.4); 
     }
     update(){
 
@@ -173,18 +177,13 @@ class OutsideWorldScene extends Phaser.Scene{
         if (nearEntrance && Phaser.Input.Keyboard.JustDown( this.enterKey)) {
             this.cameras.main.once(
                 "camerafadeoutcomplete",
-                () => {
+                ()=>{
                     this.scene.start(
                         "ArcadeInteriorScene"
                     );
                 }
             );
-            this.cameras.main.fadeOut(
-                500,
-                0,
-                0,
-                0
-            );
+            this.cameras.main.fadeOut(500,0,0,0);
         }
     }
 }

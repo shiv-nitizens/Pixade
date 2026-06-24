@@ -18,17 +18,9 @@ class ArcadeInteriorScene extends Phaser.Scene {
     }
     create() {
         this.cameras.main.fadeIn(500,0,0,0);
-        console.log(this.playerId)
-        const tileSize = 650;
-
-        for(let x = 0; x < this.scale.width; x += tileSize){
-            for(let y = 0; y < this.scale.height; y += tileSize){
-                this.add.image(x, y, "floor")
-                    .setOrigin(0,0)
-                    .setDisplaySize(tileSize, tileSize);
-            }
-        }
-        this.player = this.add.image(300,400,"ghost").setScale(0.018);
+        this.floor = this.add.image(0,0,"floor").setOrigin(0,0).setScale(2.0);
+        this.player = this.add.image(300,400,"ghost").setScale(0.025);
+        this.cameras.main.startFollow(this.player);
         this.playerName = this.add.text( this.player.x, this.player.y-30, this.playerId );
         this.arcadeMachines =
         [
