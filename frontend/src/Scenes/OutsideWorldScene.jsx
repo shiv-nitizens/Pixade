@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import ArcadeBuilding from "../assets/ArcadeBuilding.png"
-import ghost from "../assets/vecteezy_pixel-art-of-a-levitating-white-ghost-with-a-side-view-for_69528640.png"
+import PlayerSheet from "../assets/spritesheet.png"
 import Tree from "../assets/Tree.png"
 import Floor from "../assets/OutsideFloor.png"
 import FlowerPot from "../assets/FlowerPot.png"
@@ -24,6 +24,22 @@ import Boulder from "../assets/Boulder.png";
 import Stones from "../assets/Stones.png";
 import Flower from "../assets/Flower.png";
 import Statue2 from "../assets/Statue2.png";
+import IdleDown from "../assets/down-idle.png"
+import WalkDown1 from "../assets/down-one.png"
+import WalkDown2 from "../assets/down-two.png"
+import WalkDown3 from "../assets/down-three.png"
+import IdleLeft from "../assets/left-idle.png";
+import WalkLeft1 from "../assets/left-one.png";
+import WalkLeft2 from "../assets/left-two.png";
+import WalkLeft3 from "../assets/left-three.png";
+import IdleUp from "../assets/up-idle.png";
+import WalkUp1 from "../assets/up-one.png";
+import WalkUp2 from "../assets/up-two.png";
+import WalkUp3 from "../assets/up-three.png";
+import IdleRight from "../assets/right-idle.png";
+import WalkRight1 from "../assets/right-one.png";
+import WalkRight2 from "../assets/right-two.png";
+import WalkRight3 from "../assets/right-three.png";
 
 class OutsideWorldScene extends Phaser.Scene{
     constructor(){
@@ -31,7 +47,6 @@ class OutsideWorldScene extends Phaser.Scene{
     }
     preload(){
         this.load.image("ArcadeBuilding",ArcadeBuilding);
-        this.load.image("ghost",ghost);
         this.load.image("Tree",Tree);
         this.load.image("Floor",Floor);
         this.load.image("FlowerPot",FlowerPot);
@@ -55,6 +70,24 @@ class OutsideWorldScene extends Phaser.Scene{
         this.load.image("Stones",Stones);
         this.load.image("Flower",Flower);
         this.load.image("Statue2",Statue2);
+        this.load.spritesheet("player", PlayerSheet, { frameWidth: 256,frameHeight: 256 });
+        this.load.image("idle-down", IdleDown);
+        this.load.image("walk-down-1", WalkDown1);
+        this.load.image("walk-down-2", WalkDown2);
+        this.load.image("walk-down-3", WalkDown3);
+        this.load.image("idle-left", IdleLeft);
+        this.load.image("walk-left-1", WalkLeft1);
+        this.load.image("walk-left-2", WalkLeft2);
+        this.load.image("walk-left-3", WalkLeft3);
+        this.load.image("idle-up", IdleUp);
+        this.load.image("walk-up-1", WalkUp1);
+        this.load.image("walk-up-2", WalkUp2);
+        this.load.image("walk-up-3", WalkUp3);
+        this.load.image("idle-right", IdleRight);
+        this.load.image("walk-right-1", WalkRight1);
+        this.load.image("walk-right-2", WalkRight2);
+        this.load.image("walk-right-3", WalkRight3);
+                
     }
     create(){
         this.add.rectangle(0,0,3000,3000,0x3cb043).setOrigin(0);
@@ -85,8 +118,51 @@ class OutsideWorldScene extends Phaser.Scene{
         this.rightPillarCollision =new Phaser.Geom.Rectangle(1580,480,35,80);
         this.entranceZone = new Phaser.Geom.Rectangle(1480,510,100,60);
 
-        this.player = this.add.image(900,1150,"ghost").setScale(0.018);
-        this.cameras.main.startFollow(this.player);
+        this.player = this.add.sprite(900, 1150, "idle-down");
+        this.player.setScale(0.10);   
+        this.anims.create({
+            key: "walk-down",
+            frames: [
+                { key: "walk-down-1" },
+                { key: "walk-down-2" },
+                { key: "walk-down-3" }
+            ],
+            frameRate: 4,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "walk-left",
+            frames: [
+                { key: "walk-left-1" },
+                { key: "walk-left-2" },
+                { key: "walk-left-3" }
+            ],
+            frameRate: 5,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "walk-up",
+            frames: [
+                { key: "walk-up-1" },
+                { key: "walk-up-2" },
+                { key: "walk-up-3" }
+            ],
+            frameRate: 4,
+            repeat: -1
+        });
+        this.anims.create({
+            key: "walk-right",
+            frames: [
+                { key: "walk-right-1" },
+                { key: "walk-right-2" },
+                { key: "walk-right-3" }
+            ],
+            frameRate: 5,
+            repeat: -1
+        });
+        this.lastDirection = "down";
+
+        this.cameras.main.startFollow(this.player,true,0.1,0.1);
         this.cameras.main.setBounds(0,0,2790,1790);
         this.enterArcadeText = this.add.text( 0,0, "[ENTER] Enter Arcade",{ fontSize: "16px",color: "#ffffff",backgroundColor: "#000000"});    
         
@@ -129,20 +205,48 @@ class OutsideWorldScene extends Phaser.Scene{
         const oldX = this.player.x;
         const oldY = this.player.y;
 
-        const speed = 3;
-        if (this.keys.up.isDown) {
-            this.player.y -= speed;
-        }
+        const speed = 1;
+        let moving = false;
+
         if (this.keys.down.isDown) {
             this.player.y += speed;
-        }
-        if (this.keys.right.isDown) {
-            this.player.x += speed;
-        }
-        if (this.keys.left.isDown) {
+            this.player.anims.play("walk-down", true);
+            this.lastDirection = "down";
+            moving = true;
+        }else if (this.keys.left.isDown) {
             this.player.x -= speed;
+            this.player.anims.play("walk-left", true);
+            this.lastDirection = "left";
+            moving = true;
+        }else if (this.keys.up.isDown) {
+            this.player.y -= speed;
+            this.player.anims.play("walk-up", true);
+            this.lastDirection = "up";
+            moving = true;
+        }else if (this.keys.right.isDown) {
+            this.player.x += speed;
+            this.player.anims.play("walk-right", true);
+            this.lastDirection = "right";
+            moving = true;
         }
 
+        if (!moving) {
+            this.player.anims.stop();
+            switch (this.lastDirection) {
+                case "down":
+                    this.player.setTexture("idle-down");
+                    break;
+                case "left":
+                    this.player.setTexture("idle-left");
+                    break;
+                case "up":
+                    this.player.setTexture("idle-up");
+                    break;
+                case "right":
+                    this.player.setTexture("idle-right");
+                    break;
+            }
+        }
         if(this.player.x < 0){
             this.player.x = 0;
         }
