@@ -1,3 +1,4 @@
+import { Client } from "@stomp/stompjs";
 import Phaser from "phaser";
 import ArcadeBuilding from "../assets/ArcadeBuilding.png"
 import PlayerSheet from "../assets/spritesheet.png"
@@ -40,6 +41,7 @@ import IdleRight from "../assets/right-idle.png";
 import WalkRight1 from "../assets/right-one.png";
 import WalkRight2 from "../assets/right-two.png";
 import WalkRight3 from "../assets/right-three.png";
+import Player from "../entities/player";
 
 class OutsideWorldScene extends Phaser.Scene{
     constructor(){
@@ -118,8 +120,15 @@ class OutsideWorldScene extends Phaser.Scene{
         this.rightPillarCollision =new Phaser.Geom.Rectangle(1580,480,35,80);
         this.entranceZone = new Phaser.Geom.Rectangle(1480,510,100,60);
 
-        this.player = this.add.sprite(900, 1150, "idle-down");
-        this.player.setScale(0.10);   
+        this.player = new Player(this);
+        this.otherPlayers = {};
+        this.lastSentX = this.player.sprite.x;
+        this.lastSentY = this.player.sprite.y;
+        this.lastSentMoving = false;
+        this.client = new Client({
+            brokerURL: "ws://localhost:8080/ws"
+        });
+
         this.anims.create({
             key: "walk-down",
             frames: [
@@ -162,10 +171,10 @@ class OutsideWorldScene extends Phaser.Scene{
         });
         this.lastDirection = "down";
 
-        this.cameras.main.startFollow(this.player,true,0.1,0.1);
+        this.cameras.main.startFollow(this.player.sprite,true,0.1,0.1);
         this.cameras.main.setBounds(0,0,2790,1790);
         this.enterArcadeText = this.add.text( 0,0, "[ENTER] Enter Arcade",{ fontSize: "16px",color: "#ffffff",backgroundColor: "#000000"});    
-        
+
         this.leftFlowerPot = this.add.image(940,930,"FlowerPot3").setScale(0.13);
         this.flower = this.add.image(835,1100,"Flower").setScale(0.08);
         this.rightFlowerPot = this.add.image(1850,930,"FlowerPot3").setScale(0.13);
@@ -187,7 +196,12 @@ class OutsideWorldScene extends Phaser.Scene{
                     left: Phaser.Input.Keyboard.KeyCodes.A
                     });
         this.enterKey = this.input.keyboard.addKey( Phaser.Input.Keyboard.KeyCodes.ENTER );
-        const darkness = this.add.rectangle(0,0,2790,1790,0x000000);
+        this.darkness = this.add.rectangle(0,0,2790,1790,0x000000);
+        this.darkness.setOrigin(0,0);
+        this.darkness.setAlpha(0.4);
+        this.darkness.setDepth(100);
+        this.player.sprite.setDepth(10);
+
 
         this.leftLamp = this.add.image(1150,1300,"Lamp").setScale(0.18);
         this.rightLamp = this.add.image(1580,1300,"Lamp").setScale(0.18);
@@ -197,83 +211,159 @@ class OutsideWorldScene extends Phaser.Scene{
         this.bottomLeftLamp = this.add.image(170,1120,"Lamp").setScale(0.18);
         this.bottonRightLamp = this.add.image(2550,1120,"Lamp").setScale(0.18);
 
-        darkness.setOrigin(0, 0);
-        darkness.setAlpha(0.4); 
+
+        Object.values(this.players).forEach(player => {
+
+        if(player.playerId === this.playerId){
+            return;
+        }
+        const sprite = this.add.sprite(
+            player.x,
+            player.y,
+            "idle-down"
+        );
+        sprite.setScale(0.10);
+        sprite.setDepth(10);
+        this.otherPlayers[player.playerId] = sprite;
+        this.children.bringToTop(this.darkness);
+        });
+
+        this.client.onConnect = () => {
+        this.client.subscribe(
+            `/topic/worlds/${this.worldId}/players`,
+            (message) => {
+
+                const player = JSON.parse(message.body);
+                if (player.playerId === this.playerId) {
+                    return;
+                }
+                if (!this.otherPlayers[player.playerId]) {
+                const sprite = this.add.sprite(player.x,player.y,"idle-down");
+                sprite.setScale(0.10);
+                sprite.setDepth(10);
+
+                this.otherPlayers[player.playerId] = sprite;
+                this.children.bringToTop(this.darkness);
+            }else{
+               const sprite = this.otherPlayers[player.playerId];
+
+            sprite.x = player.x;
+            sprite.y = player.y;
+
+            if (player.moving) {
+                sprite.anims.play(
+                    `walk-${player.direction}`,
+                    true
+                );
+            }else{
+                sprite.anims.stop();
+                sprite.setTexture(
+                    `idle-${player.direction}`
+                );
+            }}});
+
+                this.client.subscribe(
+                `/topic/worlds/${this.worldId}/player-left`,
+                (message) => {
+                    const event = JSON.parse(message.body);
+                    const sprite = this.otherPlayers[event.playerId];
+                    if (sprite) {
+                        sprite.destroy();
+                        delete this.otherPlayers[event.playerId];
+                    }});
+
+                this.client.publish({
+                    destination: `/app/worlds/${this.worldId}/player-move`,
+                    body: JSON.stringify({
+                playerId: this.playerId,
+                x: this.player.sprite.x,
+                y: this.player.sprite.y,
+                direction: "down",
+                moving: false
+            })});
+            };
+
+            this.client.onWebSocketError = console.error;
+            this.client.onStompError = console.error;
+
+            this.darkness.setOrigin(0, 0);
+            this.darkness.setAlpha(0.4);
+            this.client.activate();
     }
     update(){
+        
+        const oldX = this.player.sprite.x;
+        const oldY = this.player.sprite.y;
 
-        const oldX = this.player.x;
-        const oldY = this.player.y;
-
-        const speed = 1;
+        const speed = 1.5;
         let moving = false;
 
         if (this.keys.down.isDown) {
-            this.player.y += speed;
-            this.player.anims.play("walk-down", true);
+            this.player.sprite.y += speed;
+            this.player.sprite.anims.play("walk-down", true);
             this.lastDirection = "down";
             moving = true;
         }else if (this.keys.left.isDown) {
-            this.player.x -= speed;
-            this.player.anims.play("walk-left", true);
+            this.player.sprite.x -= speed;
+            this.player.sprite.anims.play("walk-left", true);
             this.lastDirection = "left";
             moving = true;
         }else if (this.keys.up.isDown) {
-            this.player.y -= speed;
-            this.player.anims.play("walk-up", true);
+            this.player.sprite.y -= speed;
+            this.player.sprite.anims.play("walk-up", true);
             this.lastDirection = "up";
             moving = true;
         }else if (this.keys.right.isDown) {
-            this.player.x += speed;
-            this.player.anims.play("walk-right", true);
+            this.player.sprite.x += speed;
+            this.player.sprite.anims.play("walk-right", true);
             this.lastDirection = "right";
             moving = true;
         }
 
         if (!moving) {
-            this.player.anims.stop();
+            this.player.sprite.anims.stop();
             switch (this.lastDirection) {
                 case "down":
-                    this.player.setTexture("idle-down");
+                    this.player.sprite.setTexture("idle-down");
                     break;
                 case "left":
-                    this.player.setTexture("idle-left");
+                    this.player.sprite.setTexture("idle-left");
                     break;
                 case "up":
-                    this.player.setTexture("idle-up");
+                    this.player.sprite.setTexture("idle-up");
                     break;
                 case "right":
-                    this.player.setTexture("idle-right");
+                    this.player.sprite.setTexture("idle-right");
                     break;
             }
         }
-        if(this.player.x < 0){
-            this.player.x = 0;
+        if(this.player.sprite.x < 0){
+            this.player.sprite.x = 0;
         }
-        if(this.player.x > 2790){
-            this.player.x = 2790;
+        if(this.player.sprite.x > 2790){
+            this.player.sprite.x = 2790;
         }
-        if(this.player.y < 0){
-            this.player.y = 0;
+        if(this.player.sprite.y < 0){
+            this.player.sprite.y = 0;
         }
-        if(this.player.y > 1790){
-            this.player.y = 1790;
+        if(this.player.sprite.y > 1790){
+            this.player.sprite.y = 1790;
         }
         
-      const hitBuilding = this.buildingCollision.contains(this.player.x,this.player.y) || this.leftPillarCollision.contains(this.player.x,this.player.y )|| this.rightPillarCollision.contains(this.player.x, this.player.y);
+      const hitBuilding = this.buildingCollision.contains(this.player.sprite.x,this.player.sprite.y) || this.leftPillarCollision.contains(this.player.sprite.x,this.player.sprite.y )|| this.rightPillarCollision.contains(this.player.sprite.x, this.player.sprite.y);
         const nearEntrance =
             this.entranceZone.contains(
-                this.player.x,
-                this.player.y
+                this.player.sprite.x,
+                this.player.sprite.y
             );
 
         if (hitBuilding && !nearEntrance) {
-            this.player.x = oldX;
-            this.player.y = oldY;
+            this.player.sprite.x = oldX;
+            this.player.sprite.y = oldY;
         }
 
         if (nearEntrance) {
-            this.enterArcadeText.setPosition( this.player.x - 60, this.player.y - 60 ); 
+            this.enterArcadeText.setPosition( this.player.sprite.x - 60, this.player.sprite.y - 60 ); 
             this.enterArcadeText.setVisible(true);
         }else{
             this.enterArcadeText.setVisible(false);
@@ -288,6 +378,21 @@ class OutsideWorldScene extends Phaser.Scene{
                 }
             );
             this.cameras.main.fadeOut(500,0,0,0);
+        }
+            if (this.client.connected && (this.player.sprite.x !== this.lastSentX || this.player.sprite.y !== this.lastSentY || moving !== this.lastSentMoving)){
+            this.client.publish({
+            destination: `/app/worlds/${this.worldId}/player-move`,
+            body: JSON.stringify({
+                playerId: this.playerId,
+                x: this.player.sprite.x,
+                y: this.player.sprite.y,
+                direction: this.lastDirection,
+                moving: moving
+            })
+        });
+        this.lastSentX = this.player.sprite.x;
+        this.lastSentY = this.player.sprite.y;
+        this.lastSentMoving = moving;
         }
     }
 }

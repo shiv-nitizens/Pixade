@@ -4,10 +4,9 @@ public class PlayerPosition {
     String playerId;
     float x;
     float y;
+    String direction;
+    private boolean moving;
     public PlayerPosition(){}
-    public void fuck(){
-        System.out.println(this.x+" "+this.y);
-    }
     public float getX() {
         return x;
     }
@@ -30,5 +29,20 @@ public class PlayerPosition {
         this.playerId = playerId;
         this.x = x;
         this.y = y;
+        this.direction = "down";
+    }
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+    public boolean isMoving() {
+        return moving;
+    }
+
+    public void setMoving(boolean moving) {
+        this.moving = moving;
     }
 }
