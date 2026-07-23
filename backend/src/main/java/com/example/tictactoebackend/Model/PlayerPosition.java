@@ -5,7 +5,7 @@ public class PlayerPosition {
     float x;
     float y;
     String direction;
-    private boolean moving;
+    boolean moving;
     public PlayerPosition(){}
     public float getX() {
         return x;
@@ -34,14 +34,12 @@ public class PlayerPosition {
     public String getDirection() {
         return direction;
     }
-
     public void setDirection(String direction) {
         this.direction = direction;
     }
     public boolean isMoving() {
         return moving;
     }
-
     public void setMoving(boolean moving) {
         this.moving = moving;
     }

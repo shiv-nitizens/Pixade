@@ -7,28 +7,40 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Controller
 public class PlayerPositionController {
+    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final WorldService worldService;
 
-    SimpMessagingTemplate simpMessagingTemplate;
-    WorldService worldService;
-
-    public PlayerPositionController(SimpMessagingTemplate simpMessagingTemplate , WorldService worldService){
+    public PlayerPositionController(SimpMessagingTemplate simpMessagingTemplate, WorldService worldService) {
         this.simpMessagingTemplate = simpMessagingTemplate;
         this.worldService = worldService;
     }
 
-    @MessageMapping("/worlds/{worldId}/player-move")
-    public void handleMove(@DestinationVariable String worldId, PlayerPosition playerPosition){
+    @MessageMapping("/worlds/{worldId}/outside/player-move")
+    public void handleOutsideMove(@DestinationVariable String worldId, PlayerPosition playerPosition) {
         World world = worldService.getWorld(worldId);
-        Map<String,PlayerPosition> players = world.getPlayers();
-        players.put(playerPosition.getPlayerId(),playerPosition);
+        if (world == null) {
+            return;
+        }
+        world.getOutsidePlayers().put(playerPosition.getPlayerId(), playerPosition);
+        simpMessagingTemplate.convertAndSend(
+                "/topic/worlds/" + worldId + "/outside/players",
+                playerPosition
+        );
+    }
 
-        simpMessagingTemplate.convertAndSend("/topic/worlds/"+worldId+"/players",playerPosition);
+    @MessageMapping("/worlds/{worldId}/arcade/player-move")
+    public void handleArcadeMove(@DestinationVariable String worldId, PlayerPosition playerPosition) {
+        World world = worldService.getWorld(worldId);
+        if (world == null) {
+            return;
+        }
+        world.getArcadePlayers().put(playerPosition.getPlayerId(), playerPosition);
+        simpMessagingTemplate.convertAndSend(
+                "/topic/worlds/" + worldId + "/arcade/players",
+                playerPosition
+        );
     }
 }

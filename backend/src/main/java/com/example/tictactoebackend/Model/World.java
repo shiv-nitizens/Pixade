@@ -1,40 +1,46 @@
 package com.example.tictactoebackend.Model;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class World {
-    String WorldId;
-    String HostId;
-    Map<String,PlayerPosition> players;
+    private String worldId;
+    private String hostId;
+    private Map<String, PlayerPosition> outsidePlayers;
+    private Map<String, PlayerPosition> arcadePlayers;
 
     public World() {
-        this.players = new HashMap<>();
+        this.outsidePlayers = new HashMap<>();
+        this.arcadePlayers = new HashMap<>();
     }
-
     public String getWorldId() {
-        return WorldId;
+        return worldId;
     }
-
     public void setWorldId(String worldId) {
-        WorldId = worldId;
+        this.worldId = worldId;
     }
-
-    public Map<String,PlayerPosition> getPlayers() {
-        return players;
-    }
-
-    public void addPlayers(String playerId,PlayerPosition playerPosition){
-        this.players.put(playerId,playerPosition);
-    }
-
     public String getHostId() {
-        return HostId;
+        return hostId;
     }
-
     public void setHostId(String hostId) {
-        HostId = hostId;
+        this.hostId = hostId;
+    }
+    public Map<String, PlayerPosition> getOutsidePlayers() {
+        return outsidePlayers;
+    }
+    public Map<String, PlayerPosition> getArcadePlayers() {
+        return arcadePlayers;
+    }
+    public void addOutsidePlayer(String playerId, PlayerPosition playerPosition) {
+        outsidePlayers.put(playerId, playerPosition);
+    }
+    public void addArcadePlayer(String playerId, PlayerPosition playerPosition) {
+        arcadePlayers.put(playerId, playerPosition);
+    }
+    public void removeOutsidePlayer(String playerId) {
+        outsidePlayers.remove(playerId);
+    }
+    public void removeArcadePlayer(String playerId) {
+        arcadePlayers.remove(playerId);
     }
 }
