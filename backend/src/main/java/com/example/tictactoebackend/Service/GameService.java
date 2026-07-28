@@ -15,7 +15,7 @@ public class GameService {
     GameStorage gameStorage;
 
     @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    SimpMessagingTemplate messagingTemplate;
 
     public Game createGame(String player1Id) {
         String gameId = UUID.randomUUID().toString();

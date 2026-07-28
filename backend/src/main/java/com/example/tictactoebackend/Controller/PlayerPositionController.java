@@ -10,8 +10,8 @@ import org.springframework.stereotype.Controller;
 
 @Controller
 public class PlayerPositionController {
-    private final SimpMessagingTemplate simpMessagingTemplate;
-    private final WorldService worldService;
+    SimpMessagingTemplate simpMessagingTemplate;
+    WorldService worldService;
 
     public PlayerPositionController(SimpMessagingTemplate simpMessagingTemplate, WorldService worldService) {
         this.simpMessagingTemplate = simpMessagingTemplate;

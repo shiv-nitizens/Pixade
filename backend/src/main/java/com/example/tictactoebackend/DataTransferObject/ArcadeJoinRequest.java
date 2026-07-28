@@ -1,8 +1,17 @@
 package com.example.tictactoebackend.DataTransferObject;
 
-public class ArcadeJoinRequest {
-    private String playerId;
+import com.example.tictactoebackend.Model.GameType;
 
+public class ArcadeJoinRequest {
+
+    String playerId;
+    GameType gameType;
+    public GameType getGameType() {
+        return gameType;
+    }
+    public void setGameType(GameType gameType) {
+        this.gameType = gameType;
+    }
     public String getPlayerId() {
         return playerId;
     }

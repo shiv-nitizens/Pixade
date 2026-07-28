@@ -1,7 +1,7 @@
 package com.example.tictactoebackend.DataTransferObject;
 
 public class CreateGameRequest {
-    private String playerId;
+    String playerId;
 
     public String getPlayerId() {
         return playerId;
