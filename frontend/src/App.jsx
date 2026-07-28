@@ -42,11 +42,13 @@ function App() {
             />
             }
         if(screen == "world" && worldData){
-            return <ArcadeInterirorScene
-                worldId={worldData.WorldId}
-                playerId={playerId}
-                players={worldData.players}
+            return (
+                <ArcadeInterirorScene
+                    worldId={worldData.worldId}
+                    playerId={playerId}
+                    players={worldData}
                 />
+            );
         }
         if(screen == "private-match"){
             return <WorldForm

@@ -211,8 +211,7 @@ class OutsideWorldScene extends Phaser.Scene{
         this.bottomLeftLamp = this.add.image(170,1120,"Lamp").setScale(0.18);
         this.bottonRightLamp = this.add.image(2550,1120,"Lamp").setScale(0.18);
 
-
-        Object.values(this.players).forEach(player => {
+        Object.values(this.players.outsidePlayers).forEach(player => {
 
         if(player.playerId === this.playerId){
             return;
@@ -230,7 +229,7 @@ class OutsideWorldScene extends Phaser.Scene{
 
         this.client.onConnect = () => {
         this.client.subscribe(
-            `/topic/worlds/${this.worldId}/players`,
+            `/topic/worlds/${this.worldId}/outside/players`,
             (message) => {
 
                 const player = JSON.parse(message.body);
@@ -273,7 +272,7 @@ class OutsideWorldScene extends Phaser.Scene{
                     }});
 
                 this.client.publish({
-                    destination: `/app/worlds/${this.worldId}/player-move`,
+                    destination: `/app/worlds/${this.worldId}/outside/player-move`,
                     body: JSON.stringify({
                 playerId: this.playerId,
                 x: this.player.sprite.x,
@@ -295,7 +294,7 @@ class OutsideWorldScene extends Phaser.Scene{
         const oldX = this.player.sprite.x;
         const oldY = this.player.sprite.y;
 
-        const speed = 1.5;
+        const speed = 4.5;
         let moving = false;
 
         if (this.keys.down.isDown) {
@@ -372,16 +371,18 @@ class OutsideWorldScene extends Phaser.Scene{
             this.cameras.main.once(
                 "camerafadeoutcomplete",
                 ()=>{
-                    this.scene.start(
-                        "ArcadeInteriorScene"
-                    );
+                this.client.publish({
+                    destination: `/app/worlds/${this.worldId}/enter-arcade`,
+                    body: JSON.stringify({playerId: this.playerId})
+                });
+                    this.scene.start("ArcadeInteriorScene");
                 }
             );
             this.cameras.main.fadeOut(500,0,0,0);
         }
             if (this.client.connected && (this.player.sprite.x !== this.lastSentX || this.player.sprite.y !== this.lastSentY || moving !== this.lastSentMoving)){
             this.client.publish({
-            destination: `/app/worlds/${this.worldId}/player-move`,
+            destination: `/app/worlds/${this.worldId}/outside/player-move`,
             body: JSON.stringify({
                 playerId: this.playerId,
                 x: this.player.sprite.x,

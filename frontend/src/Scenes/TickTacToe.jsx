@@ -5,6 +5,19 @@ class TickTacToeScene extends Phaser.Scene{
     constructor(){
         super("TickTacToeScene");
     }
+    returnToArcade() {
+        console.log("Function called...")
+
+    this.time.delayedCall(2000, () => {
+
+        if (this.client && this.client.active) {
+            this.client.deactivate();
+        }
+
+        this.scene.stop("TickTacToeScene");
+        this.scene.resume("ArcadeInteriorScene");
+    });
+}
     renderBoard() {
         this.cells = [];
     for (const obj of this.boardObjects) {
@@ -65,7 +78,6 @@ class TickTacToeScene extends Phaser.Scene{
     }
 }
     async create(data){
-        
         this.cameras.main.setBackgroundColor("#000000")
 
         this.playerId = data.playerId;
@@ -95,6 +107,11 @@ class TickTacToeScene extends Phaser.Scene{
                     const game = JSON.parse(mess.body);
                     this.gameState = game;
                     this.renderBoard();
+                    console.log(this.gameState)
+                    if(game.status === "FINISHED"){
+                        console.log("FINITO...")
+                        this.returnToArcade();
+                    }
              });
             this.client.subscribe(
                 `/topic/games/${this.gameId}/players`,

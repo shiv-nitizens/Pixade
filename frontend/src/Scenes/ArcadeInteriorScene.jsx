@@ -6,6 +6,7 @@ import { Client } from "@stomp/stompjs";
 import ArcadeMachine from "../assets/image.png";
 import floor from "../assets/Floor.png";
 import ghost from "../assets/vecteezy_pixel-art-of-a-levitating-white-ghost-with-a-side-view-for_69528640.png"
+import NeonScene from "./NeonScene";
 
 class ArcadeInteriorScene extends Phaser.Scene {
     constructor() {
@@ -22,11 +23,10 @@ class ArcadeInteriorScene extends Phaser.Scene {
         this.player = this.add.image(300,400,"ghost").setScale(0.025);
         this.cameras.main.startFollow(this.player);
         this.playerName = this.add.text( this.player.x, this.player.y-30, this.playerId );
-        this.arcadeMachines =
-        [
-            {x: 300, y: 600, game: "TICTACTOE" },
-            {x: 600, y: 600, game: "??????????" },
-            {x: 900, y: 600, game: "??????????" }
+        this.arcadeMachines = [
+            {x: 300,y: 600,label: "Tic Tac Toe",gameType: "TIC_TAC_TOE"},
+            {x: 600,y: 600,label: "Neon Trails",gameType: "NEON_TRAILS"},
+            {x: 900,y: 600,label: "Sumo Arena",gameType: "SUMO_ARENA"}
         ];
         this.interactionText = this.add.text(0, 0, "",
             {fontSize: "16px", color: "#ffffff", backgroundColor: "#000000" }
@@ -34,12 +34,12 @@ class ArcadeInteriorScene extends Phaser.Scene {
         this.interactionText.setVisible(false);
         this.arcadeMachines.forEach(machine => {
             machine.sprite = this.add.image(machine.x, machine.y, "ArcadeMachine").setScale(0.125);
-            machine.label = this.add.text(machine.x, machine.y - 80, machine.game ).setOrigin(0.5);
+            machine.label = this.add.text(machine.x,machine.y - 80,machine.label).setOrigin(0.5);
         });
         this.otherPlayer = {};
         console.log(this.players);
         if (this.players) {
-            Object.values(this.players).forEach((player) => {
+            Object.values(this.players.arcadePlayers).forEach((player) => {
                 if (player.playerId === this.playerId) {
                     return;
                 }
@@ -56,7 +56,7 @@ class ArcadeInteriorScene extends Phaser.Scene {
             brokerURL:"ws://localhost:8080/ws"        
         })
         this.client.onConnect=()=>{
-            this.client.subscribe(`/topic/worlds/${this.worldId}/players`,(mess)=>{
+            this.client.subscribe(`/topic/worlds/${this.worldId}/arcade/players`,(mess)=>{
                 const player = JSON.parse(mess.body);
                 if(player.playerId === this.playerId){
                     return
@@ -74,6 +74,19 @@ class ArcadeInteriorScene extends Phaser.Scene {
 
                     remotePlayer.text.x = player.x-50;
                     remotePlayer.text.y = player.y-50;
+                }
+            });
+            this.client.subscribe("/topic/neon", (mess) => {
+                const game = JSON.parse(mess.body);
+                if (game.players[this.playerId]) {
+                    this.scene.pause();
+                    this.scene.launch(
+                    "NeonScene",
+                    {
+                        game: game,
+                        playerId: this.playerId
+                    }
+                    );
                 }
             });
             this.client.subscribe("/topic/arcade",(mess)=>{
@@ -102,7 +115,7 @@ class ArcadeInteriorScene extends Phaser.Scene {
                 }
             );
             this.client.publish({
-            destination:`/app/worlds/${this.worldId}/player-move`,
+            destination:`/app/worlds/${this.worldId}/arcade/player-move`,
             body:JSON.stringify({
                 playerId:this.playerId,
                 x:this.player.x,
@@ -184,7 +197,7 @@ class ArcadeInteriorScene extends Phaser.Scene {
                 
         if(this.client.connected && (this.player.x !== this.lastSentX || this.player.y !== this.lastSentY)){
             this.client.publish({
-                destination:`/app/worlds/${this.worldId}/player-move`,
+                destination:`/app/worlds/${this.worldId}/arcade/player-move`,
                 body:JSON.stringify({
                   playerId:this.playerId,
                   x:this.player.x,
@@ -208,7 +221,7 @@ class ArcadeInteriorScene extends Phaser.Scene {
             }
         }
         if (nearbyMachine) {
-            this.interactionText.setText(`[ENTER] ${nearbyMachine.game}`);
+            this.interactionText.setText(`[ENTER] ${nearbyMachine.label}`);
             this.interactionText.setPosition(this.player.x - 50,this.player.y - 80);
             this.interactionText.setVisible(true);
         }else{
@@ -228,15 +241,15 @@ class ArcadeInteriorScene extends Phaser.Scene {
                     break;
                 }
             }
-            if (selectedMachine && selectedMachine.game === "TICTACTOE" ){
+            if (selectedMachine) {
                 this.client.publish({
                     destination: "/app/arcade-join",
                     body: JSON.stringify({
-                        playerId: this.playerId
+                        playerId: this.playerId,
+                        gameType: selectedMachine.gameType
                     })
                 });
-            }else{
-                console.log("COMMING SOON....")
+
             }
             if (selectedMachine) {
                 console.log(selectedMachine.game);
@@ -265,7 +278,8 @@ function World({worldId,playerId,players}) {
             scene: [
                 outsideWorldScene,
                 arcadeInteriorScene,
-                TickTacToeScene
+                TickTacToeScene,
+                NeonScene
             ]
         }
         const game = new Phaser.Game(config);
